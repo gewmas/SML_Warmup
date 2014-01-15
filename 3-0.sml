@@ -4,79 +4,66 @@
 "a" => {b.txt}
 "input" => {b.txt}*)
 
-signature MyMap = 
+functor F(M: ORD_MAP where type Key.ord_key = string)
+         (S: ORD_SET where type Key.ord_key = string) :>
 sig
-	type key
-	type 'a map
-	val empty: 'a map
-	(*val add: key * 'a * 'a map -> 'a map
-	val find: key * 'a map -> 'a option*)
-end
-
-functor MyBst (K: ORD_KEY) : MyMap = 
-struct
-	type key = K.ord_key
-	datatype 'a map = 
-		NODE of key * 'a * 'a map * 'a
-		| NIL
-	val empty = NIL
-end
-
-structure IntBst = MyBst(struct type ord_key = int
-								val compare = Int.compare
-					end)
-(*======*)
-(*structure StringMap :> ORD_MAP where type Key.ord_key = string
-
-end
-
-structure StringSet :> ORD_SET where type Key.ord_key = string
-
-end*)
-
-
-
-functor F(M: ORD_MAP where type Key.ord_key = int)
-         (S: ORD_SET where type Key.ord_key = int) :>
-sig
-	(*val proc: string list -> S.set M.map*)
-	val proc: string list -> unit
+	val proc: string list -> S.set M.map
 end
 = 
 struct
-	fun proc [] = ()
-		| proc (a::l) = 
-			let
-				val ins = TextIO.openIn a
-				fun helper(copt: char option, tempString: string) =
-				case copt of
-			           NONE => ( print(tempString^"\n") )
-			         | SOME(c) => (
-			         		(*print("tempString is "^tempString^"\n");*)
+	fun proc filename_list = 
+		let
+			fun f ([], map) = map
+				| f ((a::l), map) = 
+					let
+						val ins = TextIO.openIn a
 
-			         		if Char.isSpace(c) then (
-			         			print(tempString^"\n");
-			         			(*print("tempString is "^tempString^"\n");*)
-			         			helper(TextIO.input1 ins, "")
-			         			)
-			         		else (
+						(*if word exist, insert filename to the set, else create a new Key-Value pair*)
+						fun insertWord (w, tempmap)= case M.find(tempmap, w) of
+							NONE => M.insert(tempmap, w, S.add(S.empty, a))
+							| _ =>  M.insert(tempmap, w, S.add(Option.valOf(M.find(tempmap,w)), a))  
 
-			         			helper(TextIO.input1 ins, tempString^(Char.toString(c)))
-			         			)
-			         	)
-			in
-				helper(TextIO.input1 ins, "");
-				proc l
-			end
+						fun helper(copt: char option, tempString: string, temp_map) =
+						case copt of
+					        NONE => ( 
+					           	(*print(tempString^"\n");*)
+					           	f(l, insertWord(tempString, temp_map))
+					           	)
+					       	| SOME(c) => (
+					         		(*print("tempString is "^tempString^"\n");*)
+
+					         		if Char.isSpace(c) then (
+					         			(*print(tempString^"\n");*)
+					         			(*print("tempString is "^tempString^"\n");*)
+					         			helper(TextIO.input1 ins, "", insertWord(tempString, temp_map))
+					         			)
+					         		else (
+					         			helper(TextIO.input1 ins, tempString^(Char.toString(c)), temp_map)
+					         			)
+					         	)
+					in
+						helper(TextIO.input1 ins, "", map)
+					end		
+		in
+			f (filename_list, M.empty)
+		end
 end
 
 (*structure StringSet = SplaySetFn(struct type ord_key = string val compare = String.compare end) *)
 (*map:('a->'b)->'a list->'b list
 	map f mylist*)
-structure IntListF = F(IntListMap)(IntListSet)
+structure StringMap = SplayMapFn(struct type ord_key = string val compare = String.compare end)
+structure StringSet = SplaySetFn(struct type ord_key = string val compare = String.compare end)
+structure StringF = F(StringMap)(StringSet)
+val resultMap = StringF.proc(["a.txt", "b.txt"])
 
-val test = IntListF.proc(["a.txt", "b.txt"])
-
+(*Test*)
+val map_items = StringMap.listItemsi(resultMap)
+val set_Hello = StringSet.listItems(Option.valOf(StringMap.find(resultMap, "Hello")))
+val set_World = StringSet.listItems(Option.valOf(StringMap.find(resultMap, "World")))
+val set_a = StringSet.listItems(Option.valOf(StringMap.find(resultMap, "a")))
+val set_test = StringSet.listItems(Option.valOf(StringMap.find(resultMap, "test")))
+val set_input = StringSet.listItems(Option.valOf(StringMap.find(resultMap, "input")))
 
 (*
 Reference
