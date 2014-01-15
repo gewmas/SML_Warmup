@@ -34,6 +34,8 @@ structure StringSet :> ORD_SET where type Key.ord_key = string
 
 end*)
 
+
+
 functor F(M: ORD_MAP where type Key.ord_key = int)
          (S: ORD_SET where type Key.ord_key = int) :>
 sig
@@ -42,34 +44,35 @@ sig
 end
 = 
 struct
-	fun proc stringList =
-		let
-			val ins = TextIO.openIn "a.txt"
-			fun helper(copt: char option, tempString: string) =
-			case copt of
-		           NONE => ( print(tempString^"\n") )
-		         | SOME(c) => (
-		         		print("tempString is "^tempString^"\n");
+	fun proc [] = ()
+		| proc (a::l) = 
+			let
+				val ins = TextIO.openIn a
+				fun helper(copt: char option, tempString: string) =
+				case copt of
+			           NONE => ( print(tempString^"\n") )
+			         | SOME(c) => (
+			         		(*print("tempString is "^tempString^"\n");*)
 
-		         		if Char.isSpace(c) then (
-		         			print(tempString^"\n");
-		         			print("tempString is "^tempString^"\n");
-		         			helper(TextIO.input1 ins, "")
-		         			)
-		         		else (
+			         		if Char.isSpace(c) then (
+			         			print(tempString^"\n");
+			         			(*print("tempString is "^tempString^"\n");*)
+			         			helper(TextIO.input1 ins, "")
+			         			)
+			         		else (
 
-		         			helper(TextIO.input1 ins, tempString^(Char.toString(c)))
-		         			)
-
-		         		(*print("="^Char.toString(c)^"=\n");*)
-		         		
-		         		(*helper(TextIO.input1 ins, tempString^(Char.toString(c)))*)
-		         	)
-		in
-			helper(TextIO.input1 ins, "")
-		end
+			         			helper(TextIO.input1 ins, tempString^(Char.toString(c)))
+			         			)
+			         	)
+			in
+				helper(TextIO.input1 ins, "");
+				proc l
+			end
 end
 
+(*structure StringSet = SplaySetFn(struct type ord_key = string val compare = String.compare end) *)
+(*map:('a->'b)->'a list->'b list
+	map f mylist*)
 structure IntListF = F(IntListMap)(IntListSet)
 
 val test = IntListF.proc(["a.txt", "b.txt"])
